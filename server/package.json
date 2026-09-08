@@ -1,0 +1,20 @@
+{
+  "name": "voiceform-server",
+  "version": "1.0.0",
+  "description": "Backend for VoiceForm — holds the Rime API key server-side and streams TTS to the browser extension.",
+  "main": "server.js",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "test": "node test/interruption.test.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  }
+}
