@@ -63,6 +63,33 @@
       white-space: pre-wrap;
     }
     .hint { font-size: 11px; color: #6b7280; margin-top: 10px; line-height: 1.4; }
+    #bindings { max-height: 100px; overflow-y: auto; }
+    #bindAction {
+      background: #1a1c24;
+      color: #e8e8ec;
+      border: 1px solid #2a2d38;
+      border-radius: 6px;
+      padding: 6px;
+    }
+    #addBinding {
+      width: auto;
+      background: #374151;
+      padding: 8px 10px;
+      white-space: nowrap;
+    }
+    .binding-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      padding: 4px 0;
+    }
+    .binding-remove {
+      width: auto;
+      background: transparent;
+      color: #ef4444;
+      padding: 2px 6px;
+    }
   </style>
 </head>
 <body>
@@ -75,6 +102,25 @@
     "clear field", "select the &lt;option&gt;", "check the &lt;box&gt;".
     Interrupt anytime by just speaking again.
   </div>
+
+  <div class="row" style="margin-top:14px;">
+    <div style="font-size:12px;color:#9ca3af;margin-bottom:6px;">Custom buttons</div>
+    <div id="bindings"></div>
+    <div style="display:flex; gap:6px; margin-top:6px;">
+      <select id="bindAction" style="flex:1;">
+        <option value="toggle">Start/Stop (toggle)</option>
+        <option value="start">Start only</option>
+        <option value="stop">Stop only</option>
+      </select>
+      <button id="addBinding">+ Add button</button>
+    </div>
+    <div class="hint" style="margin-top:8px;">
+      Click "Add button", then press any key or switch-emulated button
+      (e.g. Space, Enter, or a modifier combo). Add multiple bindings for
+      separate Start / Stop switches if needed.
+    </div>
+  </div>
+
   <script src="popup.js"></script>
 </body>
 </html>

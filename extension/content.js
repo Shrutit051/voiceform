@@ -6,6 +6,11 @@
  * fields, and speaks a confirmation through the local VoiceForm backend
  * (which calls Rime TTS). Implements barge-in / interruption handling via
  * the shared VoiceFormCore.SpeechQueue.
+ *
+ * Also supports starting/stopping listening via custom user-configured
+ * key bindings (set in the popup), so control never depends on precisely
+ * clicking the extension icon — important for users with limited hand
+ * mobility, including those using single-key assistive switch devices.
  */
 
 (function () {
@@ -19,6 +24,18 @@
   let lastFocusedField = null;
   let currentAudioEl = null;
   let usingFallbackTTS = false;
+  let bindings = [];
+
+  // Load any saved button bindings on page load, and keep them fresh if
+  // the user edits them from the popup while this page is open.
+  chrome.storage.sync.get('voiceformBindings', (stored) => {
+    bindings = stored.voiceformBindings || [];
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'sync' && changes.voiceformBindings) {
+      bindings = changes.voiceformBindings.newValue || [];
+    }
+  });
 
   document.addEventListener(
     'focusin',
@@ -310,13 +327,46 @@
     recognition.start();
     listening = true;
     notifyPopup({ type: 'status', listening: true });
+    say('Voice form on.');
   }
 
   function stopListening() {
+    if (!listening) return;
     listening = false;
     if (recognition) recognition.stop();
     notifyPopup({ type: 'status', listening: false });
+    say('Voice form off.');
   }
+
+  // ---------------------------------------------------------------------
+  // Custom button bindings — start/stop without touching the popup
+  // ---------------------------------------------------------------------
+  function matchesBinding(e, b) {
+    return (
+      e.code === b.code &&
+      e.ctrlKey === !!b.ctrlKey &&
+      e.altKey === !!b.altKey &&
+      e.shiftKey === !!b.shiftKey &&
+      e.metaKey === !!b.metaKey
+    );
+  }
+
+  document.addEventListener(
+    'keydown',
+    (e) => {
+      for (const b of bindings) {
+        if (matchesBinding(e, b)) {
+          e.preventDefault();
+          e.stopPropagation();
+          if (b.action === 'start') startListening();
+          else if (b.action === 'stop') stopListening();
+          else (listening ? stopListening() : startListening());
+          return;
+        }
+      }
+    },
+    true
+  );
 
   // ---------------------------------------------------------------------
   // Messaging with popup
@@ -332,6 +382,7 @@
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'start') startListening();
     if (msg.type === 'stop') stopListening();
+    if (msg.type === 'bindings-updated') bindings = msg.bindings || [];
     if (msg.type === 'get-status') sendResponse({ listening, usingFallbackTTS });
     return true;
   });
