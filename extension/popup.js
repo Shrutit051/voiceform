@@ -64,6 +64,11 @@ chrome.runtime.onMessage.addListener((msg) => {
 // single bare key from an assistive switch) to Start / Stop / Toggle,
 // so voice control never depends on precisely clicking this popup.
 // ---------------------------------------------------------------------
+const DEFAULT_BINDINGS = [
+  { id: 'default-toggle', action: 'toggle', code: 'KeyV', altKey: true, ctrlKey: false, shiftKey: false, metaKey: false },
+  { id: 'default-stop', action: 'stop', code: 'Escape', altKey: false, ctrlKey: false, shiftKey: false, metaKey: false },
+];
+
 function describeBinding(b) {
   const parts = [];
   if (b.ctrlKey) parts.push('Ctrl');
@@ -95,7 +100,12 @@ function renderBindings() {
 
 async function loadBindings() {
   const stored = await chrome.storage.sync.get('voiceformBindings');
-  bindings = stored.voiceformBindings || [];
+  if (stored.voiceformBindings && Array.isArray(stored.voiceformBindings) && stored.voiceformBindings.length > 0) {
+    bindings = stored.voiceformBindings;
+  } else {
+    bindings = [...DEFAULT_BINDINGS];
+    await chrome.storage.sync.set({ voiceformBindings: bindings });
+  }
   renderBindings();
 }
 

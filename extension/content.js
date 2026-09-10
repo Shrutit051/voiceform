@@ -10,6 +10,11 @@
  *
  * Also includes an in-page floating VoiceForm assistant prompt that automatically
  * detects forms on the page and offers a one-click "Fill with VoiceForm" experience.
+ *
+ * Also supports starting/stopping listening via custom user-configured
+ * key bindings (set in the popup), so control never depends on precisely
+ * clicking the extension icon — important for users with limited hand
+ * mobility, including those using single-key assistive switch devices.
  */
 
 (function () {
@@ -23,7 +28,12 @@
   let lastFocusedField = null;
   let currentAudioEl = null;
   let usingFallbackTTS = false;
-  let bindings = [];
+  const DEFAULT_BINDINGS = [
+    { id: 'default-toggle', action: 'toggle', code: 'KeyV', altKey: true, ctrlKey: false, shiftKey: false, metaKey: false },
+    { id: 'default-stop', action: 'stop', code: 'Escape', altKey: false, ctrlKey: false, shiftKey: false, metaKey: false },
+  ];
+
+  let bindings = [...DEFAULT_BINDINGS];
   let widgetState = 'hidden'; // 'prompt' | 'active' | 'minimized' | 'hidden'
   let isDismissed = false;
   let currentTranscript = '';
@@ -31,11 +41,16 @@
 
   // Load any saved button bindings on page load
   chrome.storage.sync.get('voiceformBindings', (stored) => {
-    bindings = stored.voiceformBindings || [];
+    if (stored.voiceformBindings && Array.isArray(stored.voiceformBindings) && stored.voiceformBindings.length > 0) {
+      bindings = stored.voiceformBindings;
+    } else {
+      bindings = [...DEFAULT_BINDINGS];
+    }
   });
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'sync' && changes.voiceformBindings) {
-      bindings = changes.voiceformBindings.newValue || [];
+      const val = changes.voiceformBindings.newValue;
+      bindings = val && val.length > 0 ? val : [...DEFAULT_BINDINGS];
     }
   });
 
@@ -86,7 +101,7 @@
     }
     const el = new Audio(audio);
     currentAudioEl = el;
-    el.play().catch(() => {});
+    el.play().catch(() => { });
   }
 
   function stopAudio() {
@@ -622,7 +637,7 @@
       if (listening) {
         try {
           recognition.start();
-        } catch (_) {}
+        } catch (_) { }
       }
     };
 
@@ -959,7 +974,7 @@
               Detected <b>${fieldCount}</b> fillable field${fieldCount === 1 ? '' : 's'} on this page. Speak naturally to fill text, radio, select, or checkboxes.
             </div>
             <button class="vf-primary-btn" id="vf-start-btn">
-              <span>🎙️</span> Start Voice Fill
+              <span>🎙️</span> Start Voice Fill <span style="font-size:11px;opacity:0.8;font-weight:400;margin-left:auto;">Alt+V</span>
             </button>
           </div>
         </div>
@@ -985,7 +1000,7 @@
             </div>
             <div class="vf-actions">
               <button class="vf-btn-icon" id="vf-min-btn" title="Minimize">🗕</button>
-              <button class="vf-btn-icon" id="vf-close-btn" title="Stop & Close">✕</button>
+              <button class="vf-btn-icon" id="vf-close-btn" title="Stop & Close (Esc)">✕</button>
             </div>
           </div>
           <div class="vf-body">
@@ -994,12 +1009,11 @@
               <span class="vf-status-text">Listening for commands…</span>
             </div>
             <div class="vf-transcript-box" id="vf-transcript-box">
-              ${
-                currentTranscript || lastConfirmation
-                  ? `<div><b>You:</b> ${currentTranscript || '…'}</div>` +
-                    (lastConfirmation ? `<div style="margin-top:4px;color:#a5f3fc;"><b>VoiceForm:</b> ${lastConfirmation}</div>` : '')
-                  : 'Say e.g. <i>"Country is India"</i>, <i>"Plan is Pro"</i>, <i>"Check terms"</i>…'
-              }
+              ${currentTranscript || lastConfirmation
+          ? `<div><b>You:</b> ${currentTranscript || '…'}</div>` +
+          (lastConfirmation ? `<div style="margin-top:4px;color:#a5f3fc;"><b>VoiceForm:</b> ${lastConfirmation}</div>` : '')
+          : 'Say e.g. <i>"Country is India"</i>, <i>"Plan is Pro"</i>, <i>"Check terms"</i>…'
+        }
             </div>
             <div id="vf-error" style="display:none;color:#f87171;font-size:11px;"></div>
             <div class="vf-meta-row">
@@ -1007,7 +1021,7 @@
               <span class="vf-badge" id="vf-provider-badge">${providerLabel}</span>
             </div>
             <button class="vf-primary-btn vf-stop-btn" id="vf-stop-btn">
-              <span>⏹️</span> Stop Listening
+              <span>⏹️</span> Stop Listening <span style="font-size:11px;opacity:0.8;font-weight:400;margin-left:auto;">Esc</span>
             </button>
           </div>
         </div>
@@ -1078,12 +1092,13 @@
   function notifyPopup(msg) {
     try {
       chrome.runtime.sendMessage(msg);
-    } catch (_) {}
+    } catch (_) { }
   }
 
   chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     if (msg.type === 'start') startListening();
     if (msg.type === 'stop') stopListening();
+    if (msg.type === 'bindings-updated') bindings = msg.bindings || [];
     if (msg.type === 'bindings-updated') bindings = msg.bindings || [];
     if (msg.type === 'get-status') sendResponse({ listening, usingFallbackTTS });
     return true;
