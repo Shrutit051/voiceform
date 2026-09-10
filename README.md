@@ -28,17 +28,27 @@ method *is* voice — remove it and there is no product, just an empty form.
    command — see [RIME_EVIDENCE.md](./RIME_EVIDENCE.md) for the exact
    claim and how it's proven.
 
-### Supported commands
+### Supported commands & field types
 
-| Say | Effect |
-|---|---|
-| `"<field label> is <value>"` (e.g. `"Name is Shruti"`, `"Email is a@b.com"`) | Finds the field by its label/placeholder/name and fills it |
-| `"tab"` / `"next field"` | Moves focus to the next fillable field |
-| `"previous field"` / `"shift tab"` | Moves focus back one field |
-| `"select all plus delete"` / `"clear field"` | Clears the focused field |
-| `"check the terms box"` / `"uncheck newsletter"` | Toggles a checkbox by its label |
-| `"select the United States"` | Picks an option in the focused (or first) `<select>` |
-| anything else, while a field is focused | Dictated verbatim into that field |
+| Say | Effect | Field Type |
+|---|---|---|
+| `"<field label> is <value>"` (e.g. `"Name is Shruti"`, `"Email is a@b.com"`) | Finds the field by its label/placeholder/name and fills it | Text, Email, Tel, Number |
+| `"Country is India"` / `"Select India"` | Picks an option in the dropdown | `<select>` Dropdown |
+| `"Plan is Pro"` / `"Select Enterprise"` | Selects a radio button in a radio group | Radio Buttons |
+| `"Check the terms"` / `"Agree to terms"` / `"Uncheck newsletter"` | Toggles a checkbox by its label | Checkbox |
+| `"Date is today"` / `"Date is 2026-09-15"` | Sets the date picker | Date (`type="date"`) |
+| `"Rating is 90"` / `"Age is 24"` | Sets range sliders and numeric fields | Range & Number |
+| `"Theme color is blue"` | Sets color picker hex | Color (`type="color"`) |
+| `"tab"` / `"next field"` | Moves focus to the next fillable field | Navigation |
+| `"previous field"` / `"shift tab"` | Moves focus back one field | Navigation |
+| `"select all plus delete"` / `"clear field"` | Clears the focused field | Editing |
+| `"submit form"` / `"click submit"` | Submits the active form | Submission |
+| anything else, while a field is focused | Dictated verbatim into that field | Textarea / Input |
+
+### Built-in Keyboard Shortcuts
+* **`Alt + V`**: Toggle VoiceForm listening on/off from anywhere on the page.
+* **`Esc`**: Stop listening / dismiss active audio.
+* **Custom buttons**: Map any keyboard key or assistive switch in the popup menu.
 
 ## 3. Architecture
 
@@ -46,16 +56,18 @@ method *is* voice — remove it and there is no product, just an empty form.
 ┌─────────────────────────┐        ┌────────────────────────┐        ┌──────────┐
 │  Chrome Extension        │  HTTP  │  VoiceForm backend       │  HTTPS │   Rime    │
 │  (content.js, popup)     │───────▶│  (server/server.js,      │───────▶│  TTS API  │
-│  • SpeechRecognition     │        │   Express)               │        │           │
-│  • DOM form filling      │◀───────│  • holds RIME_API_KEY    │◀───────│           │
-│  • SpeechQueue (barge-in)│ audio  │  • streams audio back    │ audio  │           │
+│  • In-page prompt UI     │        │   Express)               │        │           │
+│  • SpeechRecognition     │        │   • holds RIME_API_KEY   │        │           │
+│  • DOM form filling      │◀───────│   • streams audio back   │◀───────│           │
+│  • SpeechQueue (barge-in)│ audio  │                          │ audio  │           │
 └─────────────────────────┘ stream └────────────────────────┘ stream  └──────────┘
 ```
 
 - **Frontend (browser extension, MV3).** `extension/content.js` runs on
-  every page: speech recognition, command parsing, DOM interaction, and
+  every page: form detection, in-page floating assistant, speech recognition,
+  command parsing, DOM interaction across all HTML5 input types, and
   playback of Rime audio via an `<audio>` element. `extension/popup.html`/`.js`
-  is the start/stop control and live status/transcript display.
+  is the toolbar control and live status/transcript display.
   `extension/voiceform-core.js` holds the interruption/fencing state
   machine (`SpeechQueue`) — shared, dependency-free logic also used by the
   Node test.
