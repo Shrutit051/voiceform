@@ -57,9 +57,17 @@ app.post('/speak', async (req, res) => {
   const clipped = text.slice(0, 480);
 
   const upstreamController = new AbortController();
-  // If the extension aborts its fetch (barge-in), stop paying for/streaming
-  // Rime audio we'll never play.
-  req.on('close', () => upstreamController.abort());
+  let isTimedOut = false;
+  let isClientDisconnected = false;
+
+  // If the client disconnects/aborts early (e.g. barge-in in extension),
+  // stop paying for/streaming Rime audio we'll never play.
+  res.on('close', () => {
+    if (!res.writableEnded) {
+      isClientDisconnected = true;
+      upstreamController.abort();
+    }
+  });
 
   // Hard timeout: if Rime (or something in between — proxy/AV SSL
   // inspection is a known culprit on some Windows setups, especially with
@@ -67,6 +75,7 @@ app.post('/speak', async (req, res) => {
   // hanging the request forever.
   const RIME_TIMEOUT_MS = 15000;
   const timeoutId = setTimeout(() => {
+    isTimedOut = true;
     console.error(`[VoiceForm] /speak: aborting — no response from Rime after ${RIME_TIMEOUT_MS}ms`);
     upstreamController.abort();
   }, RIME_TIMEOUT_MS);
@@ -119,9 +128,20 @@ app.post('/speak', async (req, res) => {
   } catch (err) {
     if (err.name === 'AbortError') {
       const elapsed = Date.now() - startedAt;
-      console.error(`[VoiceForm] /speak: aborted after ${elapsed}ms (timeout or client disconnect)`);
+      if (isClientDisconnected) {
+        console.log(`[VoiceForm] /speak: client disconnected after ${elapsed}ms`);
+        return;
+      }
+      if (isTimedOut) {
+        console.error(`[VoiceForm] /speak: aborted after ${elapsed}ms (timeout)`);
+        if (!res.headersSent) {
+          res.status(504).json({ error: `No response from Rime within ${RIME_TIMEOUT_MS}ms — check network/AV/proxy SSL inspection.` });
+        }
+        return;
+      }
+      console.error(`[VoiceForm] /speak: aborted after ${elapsed}ms`);
       if (!res.headersSent) {
-        res.status(504).json({ error: `No response from Rime within ${RIME_TIMEOUT_MS}ms — check network/AV/proxy SSL inspection.` });
+        res.status(499).json({ error: 'Client closed request' });
       }
       return;
     }

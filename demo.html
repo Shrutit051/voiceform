@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VoiceForm Complete HTML Form Showcase</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: #090d16;
+      color: #f1f5f9;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 760px;
+      width: 100%;
+      background: #131b2e;
+      padding: 36px;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.1);
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+    .header-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 12px;
+      background: rgba(56, 189, 248, 0.15);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #38bdf8;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #38bdf8, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    p.subtitle {
+      font-size: 14px;
+      color: #94a3b8;
+      margin-bottom: 28px;
+      line-height: 1.5;
+    }
+    .section-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #38bdf8;
+      margin: 24px 0 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 6px;
+    }
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 600px) {
+      .grid-2 {
+        grid-template-columns: 1fr;
+      }
+    }
+    .form-group {
+      margin-bottom: 18px;
+    }
+    label.field-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #cbd5e1;
+    }
+    input[type="text"],
+    input[type="email"],
+    input[type="tel"],
+    input[type="number"],
+    input[type="date"],
+    input[type="time"],
+    select,
+    textarea {
+      width: 100%;
+      padding: 11px 14px;
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      color: #f8fafc;
+      font-size: 14px;
+      outline: none;
+      transition: all 0.2s;
+    }
+    input[type="text"]:focus,
+    input[type="email"]:focus,
+    input[type="tel"]:focus,
+    input[type="number"]:focus,
+    input[type="date"]:focus,
+    input[type="time"]:focus,
+    select:focus,
+    textarea:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.25);
+    }
+    input[type="color"] {
+      width: 100%;
+      height: 42px;
+      padding: 4px;
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 10px;
+      cursor: pointer;
+    }
+    .range-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    input[type="range"] {
+      flex: 1;
+      accent-color: #38bdf8;
+      cursor: pointer;
+    }
+    .range-val {
+      font-size: 13px;
+      font-weight: 700;
+      color: #38bdf8;
+      min-width: 36px;
+    }
+
+    /* Radio Group */
+    .radio-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .radio-option {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      transition: all 0.2s;
+    }
+    .radio-option:hover {
+      border-color: #38bdf8;
+    }
+    .radio-option input[type="radio"] {
+      accent-color: #38bdf8;
+      cursor: pointer;
+    }
+
+    /* Checkbox Group */
+    .checkbox-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 12px;
+      cursor: pointer;
+    }
+    .checkbox-item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #38bdf8;
+      cursor: pointer;
+    }
+    .checkbox-item label {
+      cursor: pointer;
+      font-size: 13px;
+      color: #cbd5e1;
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+    button.submit-btn {
+      flex: 1;
+      background: linear-gradient(135deg, #0ea5e9, #6366f1);
+      color: white;
+      border: none;
+      padding: 13px;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(14, 165, 233, 0.4);
+      transition: all 0.2s;
+    }
+    button.submit-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(14, 165, 233, 0.5);
+    }
+    button.reset-btn {
+      background: #1e293b;
+      color: #94a3b8;
+      border: 1px solid #334155;
+      padding: 13px 20px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    button.reset-btn:hover {
+      color: #f8fafc;
+      background: #334155;
+    }
+
+    /* Cheatsheet */
+    .cheatsheet {
+      margin-top: 32px;
+      background: #090d16;
+      border: 1px solid #334155;
+      border-radius: 14px;
+      padding: 20px;
+    }
+    .cheatsheet h2 {
+      font-size: 15px;
+      color: #38bdf8;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .cheatsheet-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px 16px;
+      font-size: 12px;
+      color: #cbd5e1;
+    }
+    @media (max-width: 600px) {
+      .cheatsheet-grid { grid-template-columns: 1fr; }
+    }
+    .cheatsheet-item {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background: rgba(255, 255, 255, 0.02);
+      padding: 8px 10px;
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .cheatsheet-item code {
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .cheatsheet-item span {
+      color: #94a3b8;
+      font-size: 11px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header-badge">🎙️ VoiceForm Full Showcase</div>
+    <h1>Comprehensive Form Testing Suite</h1>
+    <p class="subtitle">Supports all standard HTML inputs: text, email, tel, number, radio buttons, dropdowns, dates, colors, ranges, textareas, and checkboxes.</p>
+
+    <form id="showcaseForm" onsubmit="event.preventDefault(); alert('Form submitted successfully!');">
+      
+      <div class="section-title">👤 Contact Information</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="field-label" for="fullName">Full Name</label>
+          <input type="text" id="fullName" name="fullName" placeholder="e.g. Shruti Sharma" />
+        </div>
+        <div class="form-group">
+          <label class="field-label" for="email">Email Address</label>
+          <input type="email" id="email" name="email" placeholder="e.g. shruti@gmail.com" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="field-label" for="phone">Phone Number</label>
+          <input type="tel" id="phone" name="phone" placeholder="e.g. +91 98765 43210" />
+        </div>
+        <div class="form-group">
+          <label class="field-label" for="age">Age</label>
+          <input type="number" id="age" name="age" min="1" max="120" placeholder="e.g. 24" />
+        </div>
+      </div>
+
+      <div class="section-title">🔘 Selections & Options</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="field-label" for="country">Country (Dropdown)</label>
+          <select id="country" name="country">
+            <option value="">-- Select Country --</option>
+            <option value="India">India</option>
+            <option value="United States">United States</option>
+            <option value="United Kingdom">United Kingdom</option>
+            <option value="Canada">Canada</option>
+            <option value="Australia">Australia</option>
+            <option value="Germany">Germany</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="field-label">Subscription Plan (Radio)</label>
+          <div class="radio-group" id="planGroup">
+            <label class="radio-option">
+              <input type="radio" name="plan" id="planFree" value="Free" />
+              <span>Free</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="plan" id="planPro" value="Pro" />
+              <span>Pro</span>
+            </label>
+            <label class="radio-option">
+              <input type="radio" name="plan" id="planEnterprise" value="Enterprise" />
+              <span>Enterprise</span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <div class="section-title">📅 Date, Time & Pickers</div>
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="field-label" for="bookingDate">Preferred Date</label>
+          <input type="date" id="bookingDate" name="bookingDate" />
+        </div>
+        <div class="form-group">
+          <label class="field-label" for="preferredTime">Preferred Time</label>
+          <input type="time" id="preferredTime" name="preferredTime" />
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="form-group">
+          <label class="field-label" for="rating">Satisfaction Level (Range 1-100)</label>
+          <div class="range-wrap">
+            <input type="range" id="rating" name="rating" min="1" max="100" value="75" oninput="document.getElementById('ratingVal').textContent = this.value" />
+            <span class="range-val" id="ratingVal">75</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="field-label" for="themeColor">Theme Color</label>
+          <input type="color" id="themeColor" name="themeColor" value="#0ea5e9" />
+        </div>
+      </div>
+
+      <div class="section-title">📝 Notes & Preferences</div>
+      <div class="form-group">
+        <label class="field-label" for="notes">Additional Comments</label>
+        <textarea id="notes" name="notes" rows="3" placeholder="Dictate your thoughts or feedback here..."></textarea>
+      </div>
+
+      <div class="form-group" style="margin-top:10px;">
+        <div class="checkbox-item">
+          <input type="checkbox" id="terms" name="terms" />
+          <label for="terms">I agree to the terms and conditions</label>
+        </div>
+        <div class="checkbox-item">
+          <input type="checkbox" id="newsletter" name="newsletter" />
+          <label for="newsletter">Subscribe to weekly product updates</label>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button type="submit" class="submit-btn" id="submitBtn">Submit Application</button>
+        <button type="reset" class="reset-btn">Reset Form</button>
+      </div>
+    </form>
+
+    <div class="cheatsheet">
+      <h2>🎙️ Voice Commands for All Field Types:</h2>
+      <div class="cheatsheet-grid">
+        <div class="cheatsheet-item">
+          <code>"Name is Shruti"</code>
+          <span>Fills the Full Name text input</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Email is test at gmail dot com"</code>
+          <span>Fills & auto-formats email address</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Phone is 9876543210"</code>
+          <span>Fills the telephone input</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Age is 25"</code>
+          <span>Sets the numeric Age field</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Country is India" / "Select India"</code>
+          <span>Picks India from the Dropdown</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Plan is Pro" / "Select Pro"</code>
+          <span>Selects the Pro Radio button</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Date is today" / "Date is 2026-09-15"</code>
+          <span>Fills the Date picker</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Rating is 90"</code>
+          <span>Adjusts the range slider</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Theme Color is blue" / "red"</code>
+          <span>Sets the color picker value</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Check the terms" / "Agree to terms"</code>
+          <span>Toggles the Terms Checkbox on</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Uncheck newsletter"</code>
+          <span>Unchecks the newsletter checkbox</span>
+        </div>
+        <div class="cheatsheet-item">
+          <code>"Submit form" / "Tab" / "Clear field"</code>
+          <span>Performs form actions and navigation</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
