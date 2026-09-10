@@ -55,26 +55,25 @@ method *is* voice — remove it and there is no product, just an empty form.
 ```
 ┌─────────────────────────┐        ┌────────────────────────┐        ┌──────────┐
 │  Chrome Extension        │  HTTP  │  VoiceForm backend       │  HTTPS │   Rime    │
-│  (content.js, popup)     │───────▶│  (server/server.js,      │───────▶│  TTS API  │
-│  • In-page prompt UI     │        │   Express)               │        │           │
-│  • SpeechRecognition     │        │   • holds RIME_API_KEY   │        │           │
-│  • DOM form filling      │◀───────│   • streams audio back   │◀───────│           │
-│  • SpeechQueue (barge-in)│ audio  │                          │ audio  │           │
-└─────────────────────────┘ stream └────────────────────────┘ stream  └──────────┘
+│  (content.js, popup)     │───────▶│  (server/server.js)      │───────▶│  TTS API  │
+│  • In-page prompt UI     │        │   • Gemini / Groq LLM    │        │           │
+│  • SpeechRecognition     │        │     Form Agent brain     │◀───────│           │
+│  • DOM Schema & Batch Fill◀───────│   • holds RIME_API_KEY   │ audio  │           │
+│  • SpeechQueue (barge-in)│ actions│   • streams audio back   │ stream │           │
+└─────────────────────────┘ & audio └────────────────────────┘        └──────────┘
 ```
 
 - **Frontend (browser extension, MV3).** `extension/content.js` runs on
   every page: form detection, in-page floating assistant, speech recognition,
-  command parsing, DOM interaction across all HTML5 input types, and
-  playback of Rime audio via an `<audio>` element. `extension/popup.html`/`.js`
-  is the toolbar control and live status/transcript display.
+  DOM schema extraction, multi-field batch DOM updates across all HTML5 input types,
+  and playback of Rime audio via an `<audio>` element.
   `extension/voiceform-core.js` holds the interruption/fencing state
   machine (`SpeechQueue`) — shared, dependency-free logic also used by the
   Node test.
-- **Backend (`server/`).** A small Express server. Its only job is to keep
-  the Rime API key server-side and stream `POST /speak {text}` to Rime's
-  TTS endpoint and back to the extension, so the key is never present in
-  extension code, DevTools, or a recording.
+- **Backend (`server/`).** A secure Express server. It hosts the **LLM Form Agent**
+  (`POST /parse-and-act`) which takes natural, multi-field conversational speech
+  and extracts structured DOM actions, plus `POST /speak` which streams Rime TTS
+  audio directly to the extension.
 - **Rime's role.** The sole spoken-output engine. Every confirmation the
   user hears comes from Rime; there is no product-generated speech.
 

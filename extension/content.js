@@ -455,6 +455,40 @@
   }
 
   // ---------------------------------------------------------------------
+  // Form Schema Extraction (for LLM Agent)
+  // ---------------------------------------------------------------------
+  function getFormSchema() {
+    return allFillableFields().map((el) => {
+      const tag = el.tagName;
+      const type = (el.getAttribute('type') || 'text').toLowerCase();
+      const options = tag === 'SELECT' ? Array.from(el.options).map((o) => o.textContent.trim()) : undefined;
+      return {
+        id: el.id || el.name || '',
+        name: el.name || '',
+        label: labelFor(el),
+        type: tag === 'SELECT' ? 'select' : type,
+        placeholder: el.getAttribute('placeholder') || '',
+        options,
+      };
+    });
+  }
+
+  async function requestAgentParse(transcript) {
+    try {
+      const schema = getFormSchema();
+      const res = await fetch(`${BACKEND_URL}/parse-and-act`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ transcript, schema }),
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------
   // Command parsing & Execution
   // ---------------------------------------------------------------------
   function normalize(t) {
@@ -468,7 +502,7 @@
     notifyPopup({ type: 'transcript', text });
     updateWidgetTranscript();
 
-    // 1. "submit" / "submit form"
+    // Fast-path 1: "submit" / "submit form"
     if (/^(submit( (the )?(form|application))?|click submit)$/i.test(lower)) {
       const submitBtn = document.querySelector('button[type="submit"], input[type="submit"], form button:not([type="button"]):not([type="reset"])');
       if (submitBtn) {
@@ -486,21 +520,21 @@
       return;
     }
 
-    // 2. "tab" / "next field" / "next"
+    // Fast-path 2: "tab" / "next field" / "next"
     if (/^(tab|next( field)?)$/i.test(lower)) {
       const f = focusNextField(false);
       await say(f ? `Moved to ${labelFor(f) || 'next field'}.` : 'No more fields.');
       return;
     }
 
-    // 3. "previous field" / "shift tab" / "back"
+    // Fast-path 3: "previous field" / "shift tab" / "back"
     if (/^(previous( field)?|shift tab|back)$/i.test(lower)) {
       const f = focusNextField(true);
       await say(f ? `Moved to ${labelFor(f) || 'previous field'}.` : 'No previous field.');
       return;
     }
 
-    // 4. "clear field" / "select all plus delete"
+    // Fast-path 4: "clear field" / "select all plus delete"
     if (/^(select all plus delete|clear( the)?( field| this)?|delete( field)?)$/i.test(lower)) {
       const target = isFillable(document.activeElement) ? document.activeElement : lastFocusedField;
       if (target) {
@@ -512,7 +546,29 @@
       return;
     }
 
-    // 5. "check the terms" / "uncheck newsletter" / "agree to terms" / "tick terms"
+    // Intelligent Agent Path: Query Backend LLM Agent with DOM Schema
+    const agentResult = await requestAgentParse(text);
+    if (agentResult && Array.isArray(agentResult.actions) && agentResult.actions.length > 0) {
+      let anyFilled = false;
+      for (const act of agentResult.actions) {
+        const target =
+          (act.id && document.getElementById(act.id)) ||
+          (act.id && document.querySelector(`[name="${CSS.escape(act.id)}"]`)) ||
+          findFieldByLabel(act.id || act.label || '');
+
+        if (target) {
+          smartSetFieldValue(target, String(act.value), act.label || labelFor(target));
+          anyFilled = true;
+        }
+      }
+      if (anyFilled) {
+        await say(agentResult.confirmation || 'Fields updated.');
+        return;
+      }
+    }
+
+    // Local Regex Fallbacks (for single commands / offline use)
+    // 5. "check the terms" / "uncheck newsletter"
     let m = lower.match(/^(check|uncheck|tick|untick|agree to|accept)\s+(?:the\s+)?(.+?)(?:\s+box|\s+checkbox)?$/i);
     if (m) {
       const [, action, label] = m;
@@ -525,7 +581,7 @@
       }
     }
 
-    // 6. "select/choose <value> for <label>" (e.g. "Select India for country", "Choose Pro for plan")
+    // 6. "select/choose <value> for <label>"
     m = lower.match(/^(?:select|choose|pick|set)\s+(.+?)\s+for\s+(.+)$/i);
     if (m) {
       const [, val, label] = m;
@@ -537,7 +593,7 @@
       }
     }
 
-    // 7. "set <label> to <value>" (e.g. "Set country to India", "Set name to Shruti", "Set age to 25")
+    // 7. "set <label> to <value>"
     m = lower.match(/^(?:set|change)\s+(.+?)\s+to\s+(.+)$/i);
     if (m) {
       const [, label, val] = m;
@@ -549,7 +605,7 @@
       }
     }
 
-    // 8. "<label> is <value>" / "my <label> is <value>" (e.g. "Name is Shruti", "Country is India", "Plan is Pro")
+    // 8. "<label> is <value>" / "my <label> is <value>"
     m = text.match(/^(?:my\s+)?(.+?)\s+is\s+(.+)$/i);
     if (m) {
       const [, label, val] = m;
@@ -561,11 +617,10 @@
       }
     }
 
-    // 9. "select/choose (the) <value>" (e.g. "Select India", "Choose Pro", "Select Enterprise")
+    // 9. "select/choose (the) <value>"
     m = lower.match(/^(?:select|choose|pick)\s+(?:the\s+)?(.+)$/i);
     if (m) {
       const wanted = m[1];
-      // Check if focused field is a select or radio
       if (isFillable(document.activeElement)) {
         const res = smartSetFieldValue(document.activeElement, wanted);
         if (res.ok) {
@@ -573,7 +628,6 @@
           return;
         }
       }
-      // Global search across all selects & radios
       const match = findOptionGlobally(wanted);
       if (match) {
         const res = smartSetFieldValue(match.element, match.value, match.label);
